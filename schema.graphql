@@ -1,0 +1,339 @@
+# Core Protocol Entities
+
+type Protocol @entity(immutable: true) {
+  id: ID! # Always "symbiotic"
+  vaultFactoryAddress: Bytes!
+  delegatorFactoryAddress: Bytes!
+  slasherFactoryAddress: Bytes!
+  networkRegistryAddress: Bytes!
+  operatorRegistryAddress: Bytes!
+  vaultConfiguratorAddress: Bytes!
+  totalVaults: BigInt!
+  totalOperators: BigInt!
+  totalNetworks: BigInt!
+  totalTVL: BigDecimal!
+  createdAt: BigInt!
+  updatedAt: BigInt!
+}
+
+# Vault Entities
+
+type Vault @entity(immutable: false) {
+  id: ID! # Vault address
+  address: Bytes!
+  creator: Bytes!
+  collateralToken: Bytes!
+  collateralSymbol: String!
+  collateralDecimals: Int!
+  delegatorType: String! # "Full", "Network", "Operator"
+  slasherType: String! # "Instant", "Veto"
+  
+  # Configuration
+  depositWhitelist: Boolean!
+  isDepositLimit: Boolean!
+  depositLimit: BigInt!
+  
+  # Hooks and Burners
+  depositHook: Bytes
+  withdrawalHook: Bytes
+  burner: Bytes
+  
+  # Metrics
+  totalStaked: BigDecimal!
+  totalShares: BigDecimal!
+  userCount: BigInt!
+  restakingRatio: BigDecimal! # Percentage of assets restaked
+  
+  # Relationships
+  deposits: [Deposit!]! @derivedFrom(field: "vault")
+  withdrawals: [Withdrawal!]! @derivedFrom(field: "vault")
+  slashes: [Slash!]! @derivedFrom(field: "vault")
+  claims: [Claim!]! @derivedFrom(field: "vault")
+  operatorOptIns: [VaultOperatorOptIn!]! @derivedFrom(field: "vault")
+  networkDelegations: [NetworkDelegation!]! @derivedFrom(field: "vault")
+  
+  # Timestamps
+  createdAt: BigInt!
+  updatedAt: BigInt!
+  createdAtBlock: BigInt!
+}
+
+type VaultConfiguration @entity(immutable: false) {
+  id: ID! # vault address + "-config"
+  vault: Vault!
+  
+  # Role configurations
+  admin: Bytes!
+  delegator: Bytes!
+  slasher: Bytes!
+  
+  # Limits and settings
+  epochDuration: BigInt!
+  vestingDuration: BigInt!
+  
+  updatedAt: BigInt!
+  updatedAtBlock: BigInt!
+}
+
+# Operator Entities
+
+type Operator @entity(immutable: false) {
+  id: ID! # Operator address
+  address: Bytes!
+  admin: Bytes!
+  
+  # Metrics
+  totalStake: BigDecimal!
+  networkCount: BigInt!
+  vaultCount: BigInt!
+  
+  # Relationships
+  networkOptIns: [OperatorNetworkOptIn!]! @derivedFrom(field: "operator")
+  vaultOptIns: [VaultOperatorOptIn!]! @derivedFrom(field: "operator")
+  networkDelegations: [NetworkDelegation!]! @derivedFrom(field: "operator")
+  
+  createdAt: BigInt!
+  updatedAt: BigInt!
+  createdAtBlock: BigInt!
+}
+
+# Network Entities
+
+type Network @entity(immutable: false) {
+  id: ID! # Network address
+  address: Bytes!
+  admin: Bytes!
+  middleware: Bytes
+  
+  # Configuration
+  epochDuration: BigInt!
+  slashingWindow: BigInt!
+  
+  # Metrics
+  totalStake: BigDecimal!
+  operatorCount: BigInt!
+  vaultCount: BigInt!
+  
+  # Relationships
+  operatorOptIns: [OperatorNetworkOptIn!]! @derivedFrom(field: "network")
+  delegations: [NetworkDelegation!]! @derivedFrom(field: "network")
+  rewards: [NetworkReward!]! @derivedFrom(field: "network")
+  resolvers: [NetworkResolver!]! @derivedFrom(field: "network")
+  
+  createdAt: BigInt!
+  updatedAt: BigInt!
+  createdAtBlock: BigInt!
+}
+
+type NetworkResolver @entity(immutable: false) {
+  id: ID! # network + "-" + resolver address
+  network: Network!
+  resolver: Bytes!
+  
+  createdAt: BigInt!
+  createdAtBlock: BigInt!
+}
+
+# Opt-in/out Entities
+
+type OperatorNetworkOptIn @entity(immutable: false) {
+  id: ID! # operator + "-" + network
+  operator: Operator!
+  network: Network!
+  isOptedIn: Boolean!
+  
+  createdAt: BigInt!
+  updatedAt: BigInt!
+  createdAtBlock: BigInt!
+  updatedAtBlock: BigInt!
+}
+
+type VaultOperatorOptIn @entity(immutable: false) {
+  id: ID! # vault + "-" + operator
+  vault: Vault!
+  operator: Operator!
+  isOptedIn: Boolean!
+  
+  createdAt: BigInt!
+  updatedAt: BigInt!
+  createdAtBlock: BigInt!
+  updatedAtBlock: BigInt!
+}
+
+# Delegation Entities (Tier 2)
+
+type NetworkDelegation @entity(immutable: false) {
+  id: ID! # network + "-" + vault + "-" + operator
+  network: Network!
+  vault: Vault!
+  operator: Operator!
+  
+  # Current state
+  amount: BigDecimal!
+  shares: BigDecimal!
+  
+  # History tracking
+  delegationHistory: [DelegationSnapshot!]! @derivedFrom(field: "delegation")
+  
+  createdAt: BigInt!
+  updatedAt: BigInt!
+  createdAtBlock: BigInt!
+}
+
+type DelegationSnapshot @entity(immutable: true) {
+  id: ID! # delegation id + "-" + block number
+  delegation: NetworkDelegation!
+  
+  amount: BigDecimal!
+  shares: BigDecimal!
+  action: String! # "DELEGATE", "UNDELEGATE", "SLASH"
+  
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+# Transaction Entities
+
+type Deposit @entity(immutable: true) {
+  id: ID! # transaction hash + "-" + log index
+  vault: Vault!
+  depositor: Bytes!
+  recipient: Bytes!
+  
+  amount: BigDecimal!
+  shares: BigDecimal!
+  
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+type Withdrawal @entity(immutable: true) {
+  id: ID! # transaction hash + "-" + log index
+  vault: Vault!
+  withdrawer: Bytes!
+  claimer: Bytes!
+  
+  epoch: BigInt!
+  amount: BigDecimal!
+  shares: BigDecimal!
+  
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+type Slash @entity(immutable: true) {
+  id: ID! # transaction hash + "-" + log index
+  vault: Vault!
+  slasher: Bytes!
+  
+  amount: BigDecimal!
+  captureTimestamp: BigInt!
+  
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+type Claim @entity(immutable: true) {
+  id: ID! # transaction hash + "-" + log index
+  vault: Vault!
+  claimer: Bytes!
+  
+  amount: BigDecimal!
+  
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+# Rewards Entities
+
+type NetworkReward @entity(immutable: true) {
+  id: ID! # transaction hash + "-" + log index
+  network: Network!
+  token: Bytes!
+  amount: BigDecimal!
+  
+  # Distribution details
+  epochStart: BigInt!
+  epochEnd: BigInt!
+  
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+# Hook and Burner Entities
+
+type Hook @entity(immutable: true) {
+  id: ID! # Hook address
+  address: Bytes!
+  type: String! # "DEPOSIT", "WITHDRAWAL"
+  name: String!
+  
+  # Usage tracking
+  vaults: [Vault!]!
+  
+  createdAt: BigInt!
+  createdAtBlock: BigInt!
+}
+
+type Burner @entity(immutable: true) {
+  id: ID! # Burner address
+  address: Bytes!
+  collateralToken: Bytes!
+  collateralSymbol: String!
+  
+  # Usage tracking
+  vaults: [Vault!]!
+  
+  createdAt: BigInt!
+  createdAtBlock: BigInt!
+}
+
+# Aggregate/Metrics Entities
+
+type DailyVaultMetric @entity(immutable: false) {
+  id: ID! # vault address + "-" + day timestamp
+  vault: Vault!
+  day: Int! # Day since epoch
+  
+  totalStaked: BigDecimal!
+  totalShares: BigDecimal!
+  userCount: BigInt!
+  
+  depositsCount: BigInt!
+  depositsVolume: BigDecimal!
+  withdrawalsCount: BigInt!
+  withdrawalsVolume: BigDecimal!
+  
+  timestamp: BigInt!
+}
+
+type DailyNetworkMetric @entity(immutable: false) {
+  id: ID! # network address + "-" + day timestamp
+  network: Network!
+  day: Int! # Day since epoch
+  
+  totalStake: BigDecimal!
+  operatorCount: BigInt!
+  vaultCount: BigInt!
+  
+  timestamp: BigInt!
+}
+
+type DailyProtocolMetric @entity(immutable: false) {
+  id: ID! # day timestamp
+  day: Int! # Day since epoch
+  
+  totalTVL: BigDecimal!
+  totalVaults: BigInt!
+  totalOperators: BigInt!
+  totalNetworks: BigInt!
+  totalUsers: BigInt!
+  
+  timestamp: BigInt!
+}

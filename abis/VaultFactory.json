@@ -1,0 +1,34 @@
+[
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "name": "vault",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "name": "collateral",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "name": "delegator",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "name": "slasher",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "name": "admin",
+        "type": "address"
+      }
+    ],
+    "name": "VaultCreated",
+    "type": "event"
+  }
+]

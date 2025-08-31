@@ -1,0 +1,157 @@
+specVersion: 1.0.0
+description: 'Symbiotic Protocol Indexer - Comprehensive indexing of vaults, networks, operators, and delegations'
+repository: https://github.com/symbioticfi/symbiotic-indexer
+schema:
+  file: ./schema.graphql
+dataSources:
+  # Vault Factory - Creates new vaults
+  - kind: ethereum/contract
+    name: VaultFactory
+    network: mainnet
+    source:
+      address: '0xAEb6bdd95c502390db8f52c8909F703E9Af6a346'
+      abi: VaultFactory
+      startBlock: 20500000
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      file: ./src/mappings/vaultFactory.ts
+      entities:
+        - Protocol
+        - Vault
+        - VaultConfiguration
+      abis:
+        - name: VaultFactory
+          file: ./abis/VaultFactory.json
+        - name: Vault
+          file: ./abis/Vault.json
+      eventHandlers:
+        - event: VaultCreated(indexed address,indexed address,indexed address,address,address)
+          handler: handleVaultCreated
+
+  # Network Registry - Manages network registration
+  - kind: ethereum/contract
+    name: NetworkRegistry
+    network: mainnet
+    source:
+      address: '0xC773b1011461e7314CF05f97d95aa8e92C1Fd8aA'
+      abi: NetworkRegistry
+      startBlock: 20500000
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      file: ./src/mappings/networkRegistry.ts
+      entities:
+        - Network
+        - Protocol
+      abis:
+        - name: NetworkRegistry
+          file: ./abis/NetworkRegistry.json
+      eventHandlers:
+        - event: NetworkRegistered(indexed address,address)
+          handler: handleNetworkRegistered
+
+  # Operator Registry - Manages operator registration
+  - kind: ethereum/contract
+    name: OperatorRegistry
+    network: mainnet
+    source:
+      address: '0xAd817a6Bc954F678451A71363f04150FDD81Af9F'
+      abi: OperatorRegistry
+      startBlock: 20500000
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      file: ./src/mappings/operatorRegistry.ts
+      entities:
+        - Operator
+        - Protocol
+      abis:
+        - name: OperatorRegistry
+          file: ./abis/OperatorRegistry.json
+      eventHandlers:
+        - event: OperatorRegistered(indexed address,address)
+          handler: handleOperatorRegistered
+
+  # Operator Network Opt-in Service
+  - kind: ethereum/contract
+    name: OperatorNetworkOptInService
+    network: mainnet
+    source:
+      address: '0x7133415b33B438843D581013f98A08704316633c'
+      abi: OperatorNetworkOptInService
+      startBlock: 20500000
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      file: ./src/mappings/operatorNetworkOptIn.ts
+      entities:
+        - OperatorNetworkOptIn
+        - Operator
+        - Network
+      abis:
+        - name: OperatorNetworkOptInService
+          file: ./abis/OperatorNetworkOptInService.json
+      eventHandlers:
+        - event: OptIn(indexed address,indexed address,bool)
+          handler: handleOperatorNetworkOptIn
+
+  # Operator Vault Opt-in Service
+  - kind: ethereum/contract
+    name: OperatorVaultOptInService
+    network: mainnet
+    source:
+      address: '0xb361894bC06cbBA7Ea8098BF0e32EB1906A5F891'
+      abi: OperatorVaultOptInService
+      startBlock: 20500000
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      file: ./src/mappings/operatorVaultOptIn.ts
+      entities:
+        - VaultOperatorOptIn
+        - Operator
+        - Vault
+      abis:
+        - name: OperatorVaultOptInService
+          file: ./abis/OperatorVaultOptInService.json
+      eventHandlers:
+        - event: OptIn(indexed address,indexed address,bool)
+          handler: handleOperatorVaultOptIn
+
+# Dynamic data sources for individual vaults
+templates:
+  - name: Vault
+    kind: ethereum/contract
+    network: mainnet
+    source:
+      abi: Vault
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      file: ./src/mappings/vault.ts
+      entities:
+        - Vault
+        - Deposit
+        - Withdrawal
+        - Slash
+        - Claim
+        - DailyVaultMetric
+      abis:
+        - name: Vault
+          file: ./abis/Vault.json
+      eventHandlers:
+        - event: Deposit(indexed address,indexed address,uint256,uint256)
+          handler: handleDeposit
+        - event: Withdrawal(indexed address,indexed address,uint256,uint256,uint256)
+          handler: handleWithdrawal
+        - event: Slash(indexed address,uint256,uint256)
+          handler: handleSlash
+        - event: Claim(indexed address,uint256)
+          handler: handleClaim

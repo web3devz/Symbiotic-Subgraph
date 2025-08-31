@@ -1,0 +1,24 @@
+[
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "name": "operator",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "name": "network",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "name": "isOptedIn",
+        "type": "bool"
+      }
+    ],
+    "name": "OptIn",
+    "type": "event"
+  }
+]

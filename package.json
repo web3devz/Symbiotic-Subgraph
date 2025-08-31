@@ -1,0 +1,34 @@
+{
+  "name": "symbiotic-indexer",
+  "version": "1.0.0",
+  "description": "A comprehensive subgraph for indexing the Symbiotic Protocol on Ethereum mainnet",
+  "private": true,
+  "scripts": {
+    "build": "graph build",
+    "build-ipfs": "graph build --ipfs /ip4/127.0.0.1/tcp/5001",
+    "build-wast": "graph build -t wast",
+    "codegen": "graph codegen --output-dir src/types/",
+    "deploy": "graph deploy --studio symbiotic-indexer",
+    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 symbiotic-indexer"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/symbiotic-indexer.git"
+  },
+  "author": "Symbiotic Protocol Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@graphprotocol/graph-cli": "0.97.1",
+    "@graphprotocol/graph-ts": "0.35.1"
+  },
+  "keywords": [
+    "ethereum",
+    "subgraph",
+    "graphql",
+    "symbiotic",
+    "restaking",
+    "defi",
+    "blockchain",
+    "indexing"
+  ]
+}
